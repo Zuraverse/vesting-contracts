@@ -1,0 +1,29 @@
+{
+  "name": "vesting-contracts",
+  "version": "1.0.0",
+  "description": "zuraverse vesting contracts",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zuraverse/vesting-contracts.git"
+  },
+  "keywords": [
+    "zuraverse",
+    "vesting",
+    "solidity"
+  ],
+  "author": "Abhishek Sinha (avishkarabhishek786)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Zuraverse/vesting-contracts/issues"
+  },
+  "homepage": "https://github.com/Zuraverse/vesting-contracts#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.0.2",
+    "hardhat": "^2.22.2"
+  }
+}
