@@ -89,7 +89,11 @@ describe("SeedVesting", function () {
         const beneficiary = user1;
         const allocation = BigInt(1000) * WAD;
       
-        await seedVesting.createVestingSchedule(beneficiary, allocation);
+        //await seedVesting.createVestingSchedule(beneficiary, allocation);
+
+        await expect(seedVesting.createVestingSchedule(beneficiary, allocation))
+          .to.emit(seedVesting, "VestingScheduleCreated")
+          .withArgs(beneficiary, allocation, anyValue); 
       
         const schedule = await seedVesting.vestingSchedules(beneficiary);
       
@@ -98,6 +102,7 @@ describe("SeedVesting", function () {
         expect(schedule.releasedAmount).to.equal(0);
         expect(schedule.startTime).to.be.gt(0);
         expect(schedule.lastReleasedTime).to.equal(0);
+
       });
       
       it("Should prevent duplicate vesting schedule creation", async function () {
@@ -147,6 +152,18 @@ describe("SeedVesting", function () {
     // it("Should not allow claim before cliff", async function () {
     //     await expect(seedVesting.connect(beneficiary1).claim()).to.be.revertedWith("No tokens claimable");
     // });
+
+    it('Should emit TokensReleased event', async function() {
+
+        const beneficiary = user4;
+        const claimAmount = BigInt(1000) * WAD;
+
+        await seedVesting.createVestingSchedule(beneficiary, claimAmount);
+
+        await expect(seedVesting.connect(beneficiary).claim())
+          .to.emit(seedVesting, "TokensReleased")
+          .withArgs(beneficiary, anyValue); 
+    });
 
     it("Should let claim 16% of allocated tokens at TGE", async function () {
         
@@ -241,7 +258,7 @@ describe("SeedVesting", function () {
           .to.be.revertedWith("No tokens claimable");
 
         expect(await zuraToken.balanceOf(beneficiary)).to.equal(BigInt(schedule3.releasedAmount));
-        
+
     });
 
   });

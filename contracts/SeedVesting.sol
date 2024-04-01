@@ -9,8 +9,6 @@ import "hardhat/console.sol";
 
 contract SeedVesting is Ownable {
 
-  //using SafeERC20 for IERC20;
-
   // Specify the ERC20 token address
   address public immutable token;
  
@@ -141,6 +139,5 @@ contract SeedVesting is Ownable {
   // Replace with actual secure token transfer logic (consider ERC20.transfer)
   function safeTransferToken(address to, uint256 amount) internal {
     SafeERC20.safeTransfer(IERC20(token), to, amount);
-    //IERC20(token).safeTransfer(to, amount);
   }
 }
