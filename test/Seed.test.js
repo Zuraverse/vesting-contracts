@@ -173,7 +173,7 @@ describe("SeedVesting", function () {
 
     });
 
-    it("Should let claim a part of allocated token if CLIFF < elapsedTime >= VESTING_DURATION", async function() {
+    it("Should let claim in installments", async function() {
         const beneficiary = beneficiary2;
 
         const schedule1 = await seedVesting.vestingSchedules(beneficiary);
@@ -184,6 +184,7 @@ describe("SeedVesting", function () {
         expect(schedule1.releasedAmount).to.equal(0);
         expect(schedule1.startTime).to.be.gt(0);
         expect(schedule1.lastReleasedTime).to.equal(0);
+        expect(await zuraToken.balanceOf(beneficiary)).to.equal(0);
 
         const currentTime = await time.latest();
         const afterOneMonth = currentTime + 31 * DAYS; // More than TGE (2 DAYS)
@@ -207,6 +208,7 @@ describe("SeedVesting", function () {
         expect(schedule2.releasedAmount).to.equal(tge_withdrawal + monthly_installment);
         expect(schedule2.startTime).to.be.gt(0);
         expect(schedule2.lastReleasedTime).to.greaterThan(schedule1.lastReleasedTime);
+        expect(await zuraToken.balanceOf(beneficiary)).to.equal(BigInt(schedule2.releasedAmount));
 
         const afterOneYear = afterOneMonth + 11 * MONTHS + 1 * DAYS; 
 
@@ -225,6 +227,7 @@ describe("SeedVesting", function () {
         expect(schedule3.releasedAmount).to.equal(schedule1.totalAmount);
         expect(schedule3.startTime).to.be.gt(0);
         expect(schedule3.lastReleasedTime).to.greaterThan(schedule2.lastReleasedTime);
+        expect(await zuraToken.balanceOf(beneficiary)).to.equal(BigInt(schedule3.releasedAmount));
 
         const afterOneYearTwoMonths = afterOneYear + 2 * MONTHS; 
 
@@ -236,6 +239,9 @@ describe("SeedVesting", function () {
 
         await expect(seedVesting.connect(beneficiary).claim())
           .to.be.revertedWith("No tokens claimable");
+
+        expect(await zuraToken.balanceOf(beneficiary)).to.equal(BigInt(schedule3.releasedAmount));
+        
     });
 
   });
