@@ -5,7 +5,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "hardhat/console.sol";
+
 contract SeedVesting is Ownable {
+
+  //using SafeERC20 for IERC20;
+
   // Specify the ERC20 token address
   address public immutable token;
  
@@ -16,14 +21,20 @@ contract SeedVesting is Ownable {
   // Total supply of tokens
   uint256 public constant TOTAL_SUPPLY = 690000000 * 1 ether; // Assuming 18 decimals
 
+  // SEED allocation Percentage
+  uint256 public constant SEED_ALLOCATION_PCT = 8;
+
   // Seed allocation (8%)
-  uint256 public constant SEED_ALLOCATION = TOTAL_SUPPLY * 8 / 100;
+  uint256 public constant SEED_ALLOCATION = (TOTAL_SUPPLY * SEED_ALLOCATION_PCT) / 100;
+
+  // Percentage of tokens to be release at TGE 
+  uint256 public constant TGE_RELEASE_PCT = 16;  
 
   // TGE release (16% of seed allocation)
-  uint256 public constant TGE_RELEASE = SEED_ALLOCATION * 16 / 100;
+  uint256 public constant TGE_RELEASE = SEED_ALLOCATION * TGE_RELEASE_PCT / 100;
 
-  // Monthly cliff (7% of seed allocation)
-  uint256 public constant MONTHLY_CLIFF = SEED_ALLOCATION * 7 / 100;
+  // Monthly withdrwal rate (7% of total allocation)
+  uint256 public constant MONTHLY_WITHDRAWAL_PCT = 7;
 
   // Vesting duration (12 months in days)
   uint256 public constant VESTING_DURATION = 365 days;
@@ -88,16 +99,16 @@ contract SeedVesting is Ownable {
   // Claim unlocked tokens
   function claim() public onlyBeneficiary {
     VestingSchedule storage schedule = vestingSchedules[msg.sender];
-    // uint256 lastClaimTime = schedule.lastReleasedTime == 0 ? schedule.startTime : schedule.lastReleasedTime;
-    // uint256 elapsedTime = block.timestamp - lastClaimTime;
+    
     uint256 claimableAmount = calculateClaimableAmount();
-    //uint256 claimableAmount = vestedAmount - schedule.releasedAmount;
 
     require(claimableAmount > 0, "No tokens claimable");
 
     schedule.releasedAmount += claimableAmount;
     schedule.lastReleasedTime = block.timestamp;
-    // Ensure safe token transfer (replace with actual transfer logic)
+
+    assert(schedule.releasedAmount <= schedule.totalAmount);
+    
     safeTransferToken(msg.sender, claimableAmount);
 
     emit TokensReleased(msg.sender, claimableAmount);
@@ -108,25 +119,28 @@ contract SeedVesting is Ownable {
     VestingSchedule storage schedule = vestingSchedules[msg.sender];
     uint256 claimable;
     uint256 lastClaimTime = schedule.lastReleasedTime == 0 ? schedule.startTime : schedule.lastReleasedTime;
-    uint256 elapsedTime = block.timestamp - lastClaimTime;
+    uint256 elapsedTime = block.timestamp - schedule.startTime;
+
     if(elapsedTime < CLIFF) {
         claimable = 0;
     } else if (elapsedTime >= VESTING_DURATION) {
       claimable = schedule.totalAmount - schedule.releasedAmount;
     } else {
+        
         if(schedule.lastReleasedTime == 0) {
-            claimable = TGE_RELEASE;
+            claimable = (TGE_RELEASE_PCT * schedule.totalAmount) / 100;
         }
-        uint256 monthsPassed = (block.timestamp - schedule.lastReleasedTime) / 30 days; 
-        claimable += monthsPassed * MONTHLY_CLIFF;
-        //return (schedule.totalAmount * monthsPassed) / schedule.duration;
-      //vested += elapsedTime * MONTHLY_CLIFF;
+
+        uint256 monthsPassed = (block.timestamp - lastClaimTime) / 30 days; 
+        claimable += (monthsPassed * MONTHLY_WITHDRAWAL_PCT * schedule.totalAmount) / 100;
     }
+
     return claimable;
   }
 
   // Replace with actual secure token transfer logic (consider ERC20.transfer)
   function safeTransferToken(address to, uint256 amount) internal {
     SafeERC20.safeTransfer(IERC20(token), to, amount);
+    //IERC20(token).safeTransfer(to, amount);
   }
 }

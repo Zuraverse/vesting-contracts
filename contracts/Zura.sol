@@ -23,7 +23,8 @@ contract Zura is ERC20, Ownable, Constants {
             + STAKING_AND_REWARDS_ALLOCATION
             == TOTAL_SUPPLY
         );
-        _mint(address(this), TOTAL_SUPPLY);
+        //_mint(address(this), TOTAL_SUPPLY);
+        _mint(address(initialOwner), TOTAL_SUPPLY);
     }
 
     function allocate_tokens(address to, ALLOCATIONS_TYPE funds) external onlyOwner() {
