@@ -5,7 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+//import "hardhat/console.sol";
+
 contract TeamVesting is Ownable {
+
   // Specify the ERC20 token address
   address public immutable token;
  
@@ -16,17 +19,23 @@ contract TeamVesting is Ownable {
   // Total supply of tokens
   uint256 public constant TOTAL_SUPPLY = 690000000 * 1 ether; // Assuming 18 decimals
 
-  // Team allocation (15%)
-  uint256 public constant TEAM_ALLOCATION = TOTAL_SUPPLY * 15 / 100;
+  // TEAM allocation Percentage
+  uint256 public constant TEAM_ALLOCATION_PCT = 15;
 
-  // TGE release (0% of Team allocation)
-  uint256 public constant TGE_RELEASE = 0;
+  // TEAM allocation (8%)
+  uint256 public constant TEAM_ALLOCATION = (TOTAL_SUPPLY * TEAM_ALLOCATION_PCT) / 100;
 
-  // Monthly cliff (10% of team allocation)
-  uint256 public constant MONTHLY_CLIFF = TEAM_ALLOCATION * 10 / 100;
+  // Percentage of tokens to be release at TGE 
+  uint256 public constant TGE_RELEASE_PCT = 0;  
 
-  // Vesting duration (10 months in days)
-  uint256 public constant VESTING_DURATION = 300 days;
+  // TGE release (16% of team allocation)
+  uint256 public constant TGE_RELEASE = TEAM_ALLOCATION * TGE_RELEASE_PCT / 100;
+
+  // Monthly withdrwal rate (7% of total allocation)
+  uint256 public constant MONTHLY_WITHDRAWAL_PCT = 10;
+
+  // Vesting duration (12 months in days)
+  uint256 public constant VESTING_DURATION = 480 days; // Appx 16 months == 6 months cliff + 10% p.m
 
   // Keep record of total token allocated to TEAM
   uint256 public total_token_allocated_to_team = 0;
@@ -48,6 +57,7 @@ contract TeamVesting is Ownable {
   // Event emitted when tokens are released
   event TokensReleased(address beneficiary, uint256 amount);
 
+  // Cliff = 180 (6 months)
   constructor(address initialOwner, address _token, uint256 tge, uint256 cliff)
   Ownable(initialOwner) {
     require(_token != address(0), "Invalid token address");
@@ -88,16 +98,16 @@ contract TeamVesting is Ownable {
   // Claim unlocked tokens
   function claim() public onlyBeneficiary {
     VestingSchedule storage schedule = vestingSchedules[msg.sender];
-    // uint256 lastClaimTime = schedule.lastReleasedTime == 0 ? schedule.startTime : schedule.lastReleasedTime;
-    // uint256 elapsedTime = block.timestamp - lastClaimTime;
+    
     uint256 claimableAmount = calculateClaimableAmount();
-    //uint256 claimableAmount = vestedAmount - schedule.releasedAmount;
 
     require(claimableAmount > 0, "No tokens claimable");
 
     schedule.releasedAmount += claimableAmount;
     schedule.lastReleasedTime = block.timestamp;
-    // Ensure safe token transfer (replace with actual transfer logic)
+
+    assert(schedule.releasedAmount <= schedule.totalAmount);
+    
     safeTransferToken(msg.sender, claimableAmount);
 
     emit TokensReleased(msg.sender, claimableAmount);
@@ -107,19 +117,23 @@ contract TeamVesting is Ownable {
   function calculateClaimableAmount() public view returns (uint256) {
     VestingSchedule storage schedule = vestingSchedules[msg.sender];
     uint256 claimable;
-    uint256 lastClaimTime = schedule.lastReleasedTime == 0 ? schedule.startTime : schedule.lastReleasedTime;
-    uint256 elapsedTime = block.timestamp - lastClaimTime;
+    uint256 lastClaimTime = schedule.lastReleasedTime == 0 ? schedule.startTime + CLIFF : schedule.lastReleasedTime;
+    uint256 elapsedTime = block.timestamp - schedule.startTime;
+
     if(elapsedTime < CLIFF) {
         claimable = 0;
     } else if (elapsedTime >= VESTING_DURATION) {
       claimable = schedule.totalAmount - schedule.releasedAmount;
     } else {
+        
         if(schedule.lastReleasedTime == 0) {
-            claimable = TGE_RELEASE;
+            claimable = (TGE_RELEASE_PCT * schedule.totalAmount) / 100;
         }
-        uint256 monthsPassed = (block.timestamp - schedule.lastReleasedTime) / 30 days; 
-        claimable += monthsPassed * MONTHLY_CLIFF;
+
+        uint256 monthsPassed = (block.timestamp - lastClaimTime) / 30 days; 
+        claimable += (monthsPassed * MONTHLY_WITHDRAWAL_PCT * schedule.totalAmount) / 100;
     }
+
     return claimable;
   }
 
