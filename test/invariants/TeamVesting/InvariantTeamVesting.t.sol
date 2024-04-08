@@ -61,6 +61,7 @@ contract InvariantTeamVesting is Test {
     assertEq(claimable, claimable3);
   }
 
+  // @Note For `calculateClaimableWhenLastReleasedTimeIsZeroWithReleasedTimeZero()`
   function invariant_testCalculateClaimableWhenLastReleasedTimeIsZeroWithReleasedTimeZero() public {
     address caller = teamVestingHandler.ghost_currentCaller();
     (, uint totalAmount, , , ) = teamVesting.vestingSchedules(caller);
@@ -72,6 +73,7 @@ contract InvariantTeamVesting is Test {
     assertEq(claimable, claimable3);
   }
 
+  // @Note  For `calculateClaimableWhenLastReleasedTimeIsZeroWithReleasedTimeNotEqualToZero()`
   function invariant_testCalculateClaimableWhenLastReleasedTimeIsZeroWithReleasedTimeNotEqualToZero() public {
     address caller = teamVestingHandler.ghost_currentCaller();
     (, uint totalAmount, , , ) = teamVesting.vestingSchedules(caller);
@@ -85,6 +87,7 @@ contract InvariantTeamVesting is Test {
     assertEq(claimable, claimable3);
   }
 
+  // @Note For `claim()`
   function invariant_testClaim() public view {
     address caller = teamVestingHandler.ghost_currentCaller();
     assertEq(zuraToken.balanceOf(caller), teamVestingHandler.ghost_addressToClaimable(caller));
