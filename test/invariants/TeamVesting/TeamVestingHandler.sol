@@ -11,11 +11,12 @@ contract TeamVestingHandler is Test {
   address owner;
   uint public ghost_allocatedTokenInTotal;
   mapping(address => uint256) public ghost_addressToClaimable;
-  address public currentCaller;
+  address public ghost_currentCaller;
   // a mapping for keeping record how much time has passed after claiming the token, basically for
   // `calculateClaimableWhenLastReleasedTimeIsZeroWithReleasedTimeNotEqualToZero` handler contract.
   mapping(address => uint256) public ghost_monthPassedForUser;
-
+  uint256 public claimed;
+  uint256 public claimable;
   constructor(address _teamVesting, address _zuraToken, address _owner) {
     teamVesting = TeamVesting(_teamVesting);
     zuraToken = Zura(_zuraToken);
@@ -40,9 +41,8 @@ contract TeamVestingHandler is Test {
     teamVesting.createVestingSchedule(msg.sender, totalTokensAllocated);
     skip(100 days);
     vm.prank(msg.sender);
-    uint claimable = teamVesting.calculateClaimableAmount();
-    ghost_addressToClaimable[msg.sender] = claimable;
-    currentCaller = msg.sender;
+    claimable = teamVesting.calculateClaimableAmount();
+    ghost_currentCaller = msg.sender;
   }
 
   function calculateClaimableWhenElapsedTimeIsGreaterThanOrEqualToVestingDuration(uint totalTokensAllocated) public {
@@ -57,9 +57,8 @@ contract TeamVestingHandler is Test {
     assertTrue(elapsedTime > teamVesting.VESTING_DURATION());
 
     vm.prank(msg.sender);
-    uint claimable = teamVesting.calculateClaimableAmount();
-    ghost_addressToClaimable[msg.sender] = claimable;
-    currentCaller = msg.sender;
+    claimable = teamVesting.calculateClaimableAmount();
+    ghost_currentCaller = msg.sender;
   }
 
   /**
@@ -75,9 +74,9 @@ contract TeamVestingHandler is Test {
     teamVesting.createVestingSchedule(msg.sender, totalTokensAllocated);
     skip(300 days); // We are in vesting duration
     vm.prank(msg.sender);
-    uint claimable = teamVesting.calculateClaimableAmount();
+     claimable = teamVesting.calculateClaimableAmount();
     ghost_addressToClaimable[msg.sender] = claimable;
-    currentCaller = msg.sender;
+    ghost_currentCaller = msg.sender;
   }
 
   // test case 2 when releasedTime != 0
@@ -91,14 +90,31 @@ contract TeamVestingHandler is Test {
     teamVesting.createVestingSchedule(msg.sender, totalTokensAllocated);
     skip(300 days); // We are in vesting duration
     vm.prank(msg.sender);
+    vm.expectRevert(); // @audit expecting a revert because claimable is 0
     teamVesting.claim();
     skip(2 days);
-    uint claimable = teamVesting.calculateClaimableAmount();
+     claimable = teamVesting.calculateClaimableAmount();
     //vm.stopPrank();
     ghost_addressToClaimable[msg.sender] = claimable;
-    currentCaller = msg.sender;
+    ghost_currentCaller = msg.sender;
     (, , , , uint lastReleasedTime) = teamVesting.vestingSchedules(msg.sender);
     uint monthPassed = (block.timestamp - lastReleasedTime) / 30 days;
     ghost_monthPassedForUser[msg.sender] = monthPassed;
+  }
+
+  function claim(uint totalTokensAllocated) public {
+    vm.assume(msg.sender != address(0));
+    ghost_currentCaller = msg.sender;
+    totalTokensAllocated = bound(totalTokensAllocated, 1000, 5000);
+    totalTokensAllocated = totalTokensAllocated * 1e18;
+    vm.prank(owner);
+    teamVesting.createVestingSchedule(ghost_currentCaller, totalTokensAllocated);
+    skip(400 days); // We are in vesting duration
+    vm.prank(ghost_currentCaller);
+    ghost_addressToClaimable[ghost_currentCaller] = teamVesting.calculateClaimableAmount();
+    claimed = teamVesting.calculateClaimableAmount();
+    vm.prank(ghost_currentCaller);
+    vm.expectRevert(); // @audit expecting a revert because claimable is 0
+    teamVesting.claim();
   }
 }
