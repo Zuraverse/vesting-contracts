@@ -5,14 +5,14 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 contract SeedVesting is Ownable {
 
   // Specify the ERC20 token address
   address public immutable token;
  
-  uint256 public immutable TGE;
+  uint256 public immutable TGE;   // TGE == a timestamp when Token Generation Event occurs
 
   uint256 public immutable CLIFF;
 
@@ -63,7 +63,7 @@ contract SeedVesting is Ownable {
     require(block.timestamp < tge, "Invalid TGE");
     token = _token;
     TGE = tge;
-    CLIFF = cliff * 1 days;
+    CLIFF = cliff * 1 days;   // 
   }
 
   // Modifier to restrict function calls to beneficiary
@@ -119,11 +119,12 @@ contract SeedVesting is Ownable {
     uint256 lastClaimTime = schedule.lastReleasedTime == 0 ? schedule.startTime : schedule.lastReleasedTime;
     uint256 elapsedTime = block.timestamp - schedule.startTime;
 
+    // @audit As cliff is 0 so how elapsedTime can be less than 0??
     if(elapsedTime < CLIFF) {
-        claimable = 0;
-    } else if (elapsedTime >= VESTING_DURATION) {
+        claimable = 0;           // @note invariant=> if elapsedTime < CLIFF then claimable = 0
+    } else if (elapsedTime >= VESTING_DURATION) {  // @note invarian => If block.timestamp - startTime > 365 days then totalAmount - releasedAmount
       claimable = schedule.totalAmount - schedule.releasedAmount;
-    } else {
+    } else {  // when CLIFF < block.timestamp < 365 days
         
         if(schedule.lastReleasedTime == 0) {
             claimable = (TGE_RELEASE_PCT * schedule.totalAmount) / 100;

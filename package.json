@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/Zuraverse/vesting-contracts#readme",
   "devDependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.1.1",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/contracts": "^5.0.2",
     "hardhat": "^2.22.2"

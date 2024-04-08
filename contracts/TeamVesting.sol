@@ -22,14 +22,14 @@ contract TeamVesting is Ownable {
   // TEAM allocation Percentage
   uint256 public constant TEAM_ALLOCATION_PCT = 15;
 
-  // TEAM allocation (8%)
+  // TEAM allocation (8%)   // @audit I think it should be (15%)
   uint256 public constant TEAM_ALLOCATION = (TOTAL_SUPPLY * TEAM_ALLOCATION_PCT) / 100;
 
   // Percentage of tokens to be release at TGE 
   uint256 public constant TGE_RELEASE_PCT = 0;  
 
-  // TGE release (16% of team allocation)
-  uint256 public constant TGE_RELEASE = TEAM_ALLOCATION * TGE_RELEASE_PCT / 100;
+  // TGE release (16% of team allocation)  
+  uint256 public constant TGE_RELEASE = TEAM_ALLOCATION * TGE_RELEASE_PCT / 100; // @audit how it is 16% !
 
   // Monthly withdrwal rate (7% of total allocation)
   uint256 public constant MONTHLY_WITHDRAWAL_PCT = 10;
@@ -64,7 +64,7 @@ contract TeamVesting is Ownable {
     require(block.timestamp < tge, "Invalid TGE");
     token = _token;
     TGE = tge;
-    CLIFF = cliff * 1 days;
+    CLIFF = cliff * 1 days;  // @audit i think it should be block.timestamp + cliff*1 days
   }
 
   // Modifier to restrict function calls to beneficiary

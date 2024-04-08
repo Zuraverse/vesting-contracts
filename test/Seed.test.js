@@ -45,6 +45,11 @@ describe("SeedVesting", function () {
 
   });
 
+  // @audit passed
+  it("check cliffTime", async function(){
+    expect(await seedVesting.CLIFF()).to.equal(0);
+  });
+
   it("Should deploy with correct token address", async function () {
     expect(await seedVesting.token()).to.equal(zuraTokenAddress); // Replace with expected token address
   });
