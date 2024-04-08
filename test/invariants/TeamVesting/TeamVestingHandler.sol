@@ -13,7 +13,7 @@ contract TeamVestingHandler is Test {
   mapping(address => uint256) public ghost_addressToClaimable;
   address public ghost_currentCaller;
   // a mapping for keeping record how much time has passed after claiming the token, basically for
-  // `calculateClaimableWhenLastReleasedTimeIsZeroWithReleasedTimeNotEqualToZero` handler contract.
+  // `calculateClaimableWhenLastReleasedTimeIsZeroWithReleasedTimeNotEqualToZero` handler function.
   mapping(address => uint256) public ghost_monthPassedForUser;
   uint256 public claimed;
   uint256 public claimable;
