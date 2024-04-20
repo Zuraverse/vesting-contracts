@@ -136,3 +136,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+coverage.json

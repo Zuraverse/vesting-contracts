@@ -4,7 +4,16 @@
   "description": "zuraverse vesting contracts",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deployzura": "npx hardhat ignition deploy ./ignition/modules/Zura.js --network sepolia --deployment-id zurav1",
+    "verifyzura": "npx hardhat ignition verify zurav1",    
+    "deployseed": "npx hardhat ignition deploy ./ignition/modules/Seed.js --network sepolia --deployment-id seedv1",
+    "verifyseed": "npx hardhat ignition verify seedv1",
+    "deployteam": "npx hardhat ignition deploy ./ignition/modules/Team.js --network sepolia --deployment-id teamv1",
+    "verifyteam": "npx hardhat ignition verify teamv1",
+    "test": "npx hardhat test --parallel",
+    "testseed": "REPORT_GAS=true npx hardhat test test/Seed.test.js",
+    "testteam": "REPORT_GAS=true npx hardhat test test/Team.test.js",
+    "coverage": "REPORT_GAS=true npx hardhat coverage"
   },
   "repository": {
     "type": "git",
@@ -24,6 +33,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5",
     "hardhat": "^2.22.2"
   }
 }
