@@ -137,16 +137,20 @@ describe("TeamVesting", function () {
 
   describe("test claim function", function() {
 
-    let beneficiary1, beneficiary2, allocation1, allocation2;
+    let beneficiary1, beneficiary2, beneficiary3, allocation1, allocation2, allocation3;
 
     beforeEach(async function() {
         beneficiary1 = user1;
         beneficiary2 = user2;
+        beneficiary3 = user3;
+        
         allocation1 = BigInt(1000) * WAD;
         allocation2 = BigInt(2000) * WAD;
+        allocation3 = BigInt(3000) * WAD;
       
         await seedVesting.createVestingSchedule(beneficiary1, allocation1);
         await seedVesting.createVestingSchedule(beneficiary2, allocation2);
+        await seedVesting.createVestingSchedule(beneficiary3, allocation3);
     });
 
     it("Should allow claim only by beneficiary", async function () {
@@ -211,20 +215,30 @@ describe("TeamVesting", function () {
         expect(await zuraToken.balanceOf(beneficiary)).to.equal(0);
 
         const currentTime = await time.latest();
+        console.log("currentTime", currentTime);
         const afterSevenMonth = currentTime + 210 * DAYS; // CLIFF + 1 MONTH
+        console.log("afterSevenMonth", afterSevenMonth);
 
         // Time travel to 7 months (6 month CLIFF + 1 Month Vesting)
         await time.increaseTo(afterSevenMonth);
 
+        console.log("After 7 months", await time.latest());
+
+        // tge = 0 for Team
         const tge_withdrawal = (BigInt(0) * BigInt(allocation2)) / BigInt(100);
 
         const num_of_months = calculate_months(afterSevenMonth, currentTime, 0); // 2592000 seconds = 30 days
+        console.log("num_of_months", num_of_months);
 
         const monthly_installment = (BigInt(num_of_months) * BigInt(10) * BigInt(allocation2)) / BigInt(100);
 
+        console.log("monthly_installment", monthly_installment);
+
+        console.log("await seedVesting.connect(beneficiary).calculateClaimableAmount()", await seedVesting.connect(beneficiary).calculateClaimableAmount());
+
         expect(await seedVesting.connect(beneficiary).calculateClaimableAmount()).to.equal(tge_withdrawal + monthly_installment);
 
-        // Claim after 6 month along with tge amount
+        // Claim after 6 months along with tge amount
         await seedVesting.connect(beneficiary).claim();
 
         const schedule2 = await seedVesting.vestingSchedules(beneficiary);
@@ -241,9 +255,15 @@ describe("TeamVesting", function () {
         // Time travel to 16 months (Reach to the end of the vesting period == 6 Months CLIFF + 10 monthly claims)
         await time.increaseTo(afterSixteenMonths);
 
+        console.log("afterSixteenMonths", await time.currentTime());
+
         const num_of_months2 = calculate_months(afterSixteenMonths, currentTime, afterSevenMonth);
 
+        console.log("num_of_months2", num_of_months2);
+
         const monthly_installment2 = (BigInt(num_of_months2) * BigInt(10) * BigInt(allocation2)) / BigInt(100);
+
+        console.log("monthly_installment2", monthly_installment2);
 
         expect(await seedVesting.connect(beneficiary).calculateClaimableAmount()).to.equal(schedule2.totalAmount - (tge_withdrawal + monthly_installment));
         expect(await seedVesting.connect(beneficiary).calculateClaimableAmount()).to.equal(monthly_installment2);
@@ -265,6 +285,8 @@ describe("TeamVesting", function () {
         // Time travel to 1 year 2 months
         await time.increaseTo(afterEighteenthMonths);
 
+        console.log("afterEighteenthMonths", await time.currentTime());
+
         // No more tokens available to claim after all tokens claimed
         expect(await seedVesting.connect(beneficiary).calculateClaimableAmount()).to.equal(BigInt(0));
 
@@ -272,6 +294,17 @@ describe("TeamVesting", function () {
           .to.be.revertedWith("No tokens claimable");
 
         expect(await zuraToken.balanceOf(beneficiary)).to.equal(BigInt(schedule3.releasedAmount));
+
+        // User3 should be able to claim all the tokens after elapsedTime >= VESTING DURATION
+        expect(await seedVesting.connect(beneficiary3).calculateClaimableAmount()).to.equal(allocation3);
+
+        expect(await zuraToken.balanceOf(beneficiary3)).to.equal(BigInt(0));
+
+        await seedVesting.connect(beneficiary3).claim();
+
+        expect(await zuraToken.balanceOf(beneficiary3)).to.equal(BigInt(allocation3));
+
+        expect(await seedVesting.connect(beneficiary3).calculateClaimableAmount()).to.equal(0);
 
     });
 
