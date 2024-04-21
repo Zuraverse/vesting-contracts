@@ -25,7 +25,7 @@ describe("SeedVesting", function () {
   beforeEach(async function () {
 
     const currentTime = await time.latest();
-    const tgeTime = currentTime + 2 * DAYS;
+    const tgeTime = currentTime + 2 * MINUTES;
 
     [owner, user1, user2, user3, user4] = await ethers.getSigners();
     tge = tgeTime; // Future timestamp
@@ -70,7 +70,7 @@ describe("SeedVesting", function () {
   });
 
   it("Should deploy with correct CLIFF", async function () {
-    expect(await seedVesting.CLIFF()).to.equal(BigInt(cliff * 1 * DAYS));
+    expect(await seedVesting.CLIFF()).to.equal(BigInt(cliff * 1 * HOURS));
   });
 
   describe("testing createVestingSchedule()", function() {
@@ -204,7 +204,7 @@ describe("SeedVesting", function () {
         expect(await zuraToken.balanceOf(beneficiary)).to.equal(0);
 
         const currentTime = await time.latest();
-        const afterOneMonth = currentTime + 31 * DAYS; // More than TGE (2 DAYS)
+        const afterOneMonth = currentTime + 1 * HOURS; // More than TGE (2 Minutes)
 
         // Time travel to 1 month
         await time.increaseTo(afterOneMonth);

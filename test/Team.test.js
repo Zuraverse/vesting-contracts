@@ -21,22 +21,23 @@ describe("TeamVesting", function () {
   const TOTAL_SUPPLY = BigInt('690000000') * WAD;
   const SEED_ALLOCATION = (TOTAL_SUPPLY * BigInt('15')) / BigInt('100');
   const TGE_RELEASE = (SEED_ALLOCATION * BigInt('0')) / BigInt('100');
-  cliff = 180; // Cliff duration in days
-  const CLIFF_IN_SECS = cliff * 1 * DAYS;
+  cliff = 6; // Cliff duration in hours
+  const CLIFF_IN_SECS = cliff * 1 * HOURS;
 
   function calculate_months(currentTime, startTime, lastReleasedTime) {
     //return Math.round((futureTime - (CLIFF_IN_SECS+currentTime)) / 2592000); // 2592000 seconds = 30 days
     let lastClaimTime = lastReleasedTime == 0 ? startTime + CLIFF_IN_SECS : lastReleasedTime;
-    return Math.round(currentTime - lastClaimTime) / 2592000;
+    console.log(currentTime, startTime, lastReleasedTime, lastClaimTime);
+    return Math.round(currentTime - lastClaimTime) / 3600;
   }
 
   beforeEach(async function () {
 
     const currentTime = await time.latest();
-    const tgeTime = currentTime + 2 * DAYS;
+    const tgeTime = currentTime;
 
     [owner, user1, user2, user3, user4] = await ethers.getSigners();
-    tge = tgeTime; // Future timestamp
+    tge = tgeTime + 2 * MINUTES; // Future timestamp
 
     const Zura = await ethers.getContractFactory("Zura");
     zuraToken = await Zura.deploy(await owner.getAddress());
@@ -64,7 +65,7 @@ describe("TeamVesting", function () {
     expect(await zuraToken.balanceOf(seedVestingAddress)).to.equal(BigInt('55200000') * WAD);
   });
 
-  it("Should deploy with correct SEED_ALLOCATION", async function () {
+  it("Should deploy with correct TEAM_ALLOCATION", async function () {
     expect(await seedVesting.TEAM_ALLOCATION()).to.equal((TOTAL_SUPPLY * BigInt('15')) / BigInt('100'));
   });
 
@@ -77,7 +78,7 @@ describe("TeamVesting", function () {
   });
 
   it("Should deploy with correct CLIFF", async function () {
-    expect(await seedVesting.CLIFF()).to.equal(BigInt(cliff * 1 * DAYS));
+    expect(await seedVesting.CLIFF()).to.equal(BigInt(cliff * 1 * HOURS));
   });
 
   describe("testing createVestingSchedule()", function() {
@@ -215,9 +216,9 @@ describe("TeamVesting", function () {
         expect(await zuraToken.balanceOf(beneficiary)).to.equal(0);
 
         const currentTime = await time.latest();
-        const afterSevenMonth = currentTime + 210 * DAYS; // CLIFF + 1 MONTH
+        const afterSevenMonth = currentTime + 7 * HOURS; // CLIFF + 1 MONTH
 
-        // Time travel to 7 months (6 month CLIFF + 1 Month Vesting)
+        // Time travel to 7 hours (6 hours CLIFF + 1 hours Vesting)
         await time.increaseTo(afterSevenMonth);
 
         // tge = 0 for Team
@@ -241,9 +242,9 @@ describe("TeamVesting", function () {
         expect(schedule2.lastReleasedTime).to.greaterThan(schedule1.lastReleasedTime);
         expect(await zuraToken.balanceOf(beneficiary)).to.equal(BigInt(schedule2.releasedAmount));
 
-        const afterSixteenMonths = afterSevenMonth + 9 * MONTHS;  // 16 months which means end of vesting period
+        const afterSixteenMonths = afterSevenMonth + 9 * HOURS;  // 16 months which means end of vesting period
 
-        // Time travel to 16 months (Reach to the end of the vesting period == 6 Months CLIFF + 10 monthly claims)
+        // Time travel to 16 hours (Reach to the end of the vesting period == 6 hours CLIFF + 10 hourly claims)
         await time.increaseTo(afterSixteenMonths);
 
         const num_of_months2 = calculate_months(afterSixteenMonths, currentTime, afterSevenMonth);
@@ -265,7 +266,7 @@ describe("TeamVesting", function () {
         expect(schedule3.lastReleasedTime).to.greaterThan(schedule2.lastReleasedTime);
         expect(await zuraToken.balanceOf(beneficiary)).to.equal(BigInt(schedule3.releasedAmount));
 
-        const afterEighteenthMonths = afterSixteenMonths + 2 * MONTHS; 
+        const afterEighteenthMonths = afterSixteenMonths + 2 * HOURS; 
 
         // Time travel to 1 year 2 months
         await time.increaseTo(afterEighteenthMonths);

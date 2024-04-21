@@ -34,8 +34,8 @@ contract TeamVesting is Ownable {
   // Monthly withdrwal rate (7% of total allocation)
   uint256 public constant MONTHLY_WITHDRAWAL_PCT = 10;
 
-  // Vesting duration (12 months in days)
-  uint256 public constant VESTING_DURATION = 480 days; // Appx 16 months == 6 months cliff + 10% p.m
+  // Vesting duration (16 hours)
+  uint256 public constant VESTING_DURATION = 16 hours; // Appx 16 hours == 6 hours cliff + 10% p.m
 
   // Keep record of total token allocated to TEAM
   uint256 public total_token_allocated_to_team = 0;
@@ -64,7 +64,7 @@ contract TeamVesting is Ownable {
     require(block.timestamp < tge, "Invalid TGE");
     token = _token;
     TGE = tge;
-    CLIFF = cliff * 1 days;
+    CLIFF = cliff * 1 hours;
   }
 
   // Modifier to restrict function calls to beneficiary
@@ -130,8 +130,8 @@ contract TeamVesting is Ownable {
             claimable = (TGE_RELEASE_PCT * schedule.totalAmount) / 100;
         }
 
-        uint256 monthsPassed = (block.timestamp - lastClaimTime) / 30 days; 
-        claimable += (monthsPassed * MONTHLY_WITHDRAWAL_PCT * schedule.totalAmount) / 100;
+        uint256 hoursPassed = (block.timestamp - lastClaimTime) / 60 minutes; 
+        claimable += (hoursPassed * MONTHLY_WITHDRAWAL_PCT * schedule.totalAmount) / 100;
     }
 
     return claimable;

@@ -34,8 +34,8 @@ contract SeedVesting is Ownable {
   // Monthly withdrwal rate (7% of total allocation)
   uint256 public constant MONTHLY_WITHDRAWAL_PCT = 7;
 
-  // Vesting duration (12 months in days)
-  uint256 public constant VESTING_DURATION = 365 days;
+  // Vesting duration (12 hours)
+  uint256 public constant VESTING_DURATION = 12 hours;
 
   // Keep record of total token allocated to SEED
   uint256 public total_token_allocated_to_seed = 0;
@@ -63,7 +63,7 @@ contract SeedVesting is Ownable {
     require(block.timestamp < tge, "Invalid TGE");
     token = _token;
     TGE = tge;
-    CLIFF = cliff * 1 days;
+    CLIFF = cliff * 1 hours;
   }
 
   // Modifier to restrict function calls to beneficiary
@@ -129,8 +129,8 @@ contract SeedVesting is Ownable {
             claimable = (TGE_RELEASE_PCT * schedule.totalAmount) / 100;
         }
 
-        uint256 monthsPassed = (block.timestamp - lastClaimTime) / 30 days; 
-        claimable += (monthsPassed * MONTHLY_WITHDRAWAL_PCT * schedule.totalAmount) / 100;
+        uint256 hoursPassed = (block.timestamp - lastClaimTime) / 60 minutes; 
+        claimable += (hoursPassed * MONTHLY_WITHDRAWAL_PCT * schedule.totalAmount) / 100;
     }
 
     return claimable;
